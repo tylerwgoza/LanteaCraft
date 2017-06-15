@@ -2,21 +2,25 @@ package lc.items;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import lc.api.components.ComponentType;
+import lc.api.defs.Definition;
+import lc.api.stargate.IrisType;
+import lc.common.base.LCItem;
+import lc.common.configuration.xml.ComponentConfig;
+import lc.common.resource.ResourceAccess;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.IIcon;
-import lc.ResourceAccess;
-import lc.api.components.ComponentType;
-import lc.api.defs.Definition;
-import lc.api.stargate.IrisType;
-import lc.common.base.LCItem;
-import lc.common.configuration.xml.ComponentConfig;
 
+/**
+ * Iris upgrade item implementation
+ * 
+ * @author AfterLifeLochie
+ *
+ */
 @Definition(name = "irisUpgrade", type = ComponentType.STARGATE, itemClass = ItemIrisUpgrade.class)
 public class ItemIrisUpgrade extends LCItem {
 
@@ -121,8 +125,9 @@ public class ItemIrisUpgrade extends LCItem {
 	@Override
 	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean wat) {
 		double damage = ((100 * getIrisDamage(stack)) / getMaximumDamage(getType(stack)));
-		list.add(I18n.format("iris.type.text", I18n.format(String.format("%s.name", getType(stack).getName()))));
-		list.add(I18n.format("iris.damage.text", String.format("%.2f%%", damage)));
+		list.add(I18n.format("lc.interface.iris.type.text",
+				I18n.format(String.format("lc.interface.iris.type.%s.name", getType(stack).getName()))));
+		list.add(I18n.format("lc.interface.iris.damage.text", String.format("%.2f%%", damage)));
 	}
 
 	private void updateDisplay(ItemStack stack) {

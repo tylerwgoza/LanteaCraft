@@ -3,11 +3,17 @@ package lc.common.impl.registry;
 import java.util.HashMap;
 import java.util.Map;
 
-import cpw.mods.fml.common.event.FMLInitializationEvent;
 import lc.LCRuntime;
 import lc.api.components.IInterfaceRegistry;
 import lc.api.defs.IInterfaceDefinition;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 
+/**
+ * Interface registry implementation
+ * 
+ * @author AfterLifeLochie
+ *
+ */
 public class InterfaceRegistry implements IInterfaceRegistry {
 
 	/** Pool of all known definitions. */
@@ -16,6 +22,7 @@ public class InterfaceRegistry implements IInterfaceRegistry {
 	/** Last element ID */
 	private int lastId = 0;
 
+	/** Default constructor */
 	public InterfaceRegistry() {
 		definitionPool = new HashMap<String, IInterfaceDefinition>();
 	}

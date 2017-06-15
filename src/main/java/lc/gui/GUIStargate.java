@@ -7,18 +7,25 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
-import lc.ResourceAccess;
 import lc.api.stargate.IStargateAccess;
 import lc.common.base.ux.IconButton;
 import lc.common.base.ux.LCContainerGUI;
 import lc.common.base.ux.LCContainerTab;
 import lc.common.base.ux.LCTabbedSlot;
 import lc.common.base.ux.Popover;
+import lc.common.resource.ResourceAccess;
 import lc.container.ContainerStargate;
 import lc.tiles.TileStargateBase;
 
+/**
+ * Stargate GUI implementation
+ * 
+ * @author AfterLifeLochie
+ *
+ */
 public class GUIStargate extends LCContainerGUI {
 
+	/** Stargate default tab implementation */
 	public static class StargateDefaultTab extends LCContainerTab {
 		@Override
 		protected void onTabOpened(LCContainerGUI container) {
@@ -60,7 +67,7 @@ public class GUIStargate extends LCContainerGUI {
 			IStargateAccess stargate = (IStargateAccess) container.getTile();
 			String address = stargate.getStargateAddress().getAddressString();
 			container.drawAddressString(128, 56, address, 9, "-", "-");
-			container.drawFramedSymbols(128, 8, stargate.getStargateType(), address);
+			container.drawFramedSymbols(128, 8, stargate.getStargateType(), address.toCharArray());
 			IconButton.drawButton(Minecraft.getMinecraft(), "copy", 240, 54, mouseX - container.offsetLeft(), mouseY
 					- container.offsetTop(), container.isMouseDown(), 0.75, 1.0f);
 			if (IconButton.buttonHovered(240, 54, mouseX - container.offsetLeft(), mouseY - container.offsetTop(), 1.0))
@@ -93,8 +100,14 @@ public class GUIStargate extends LCContainerGUI {
 		protected void keyTyped(LCContainerGUI container, char c, int key) {
 			// TODO Auto-generated method stub
 		}
+
+		@Override
+		protected void update(LCContainerGUI container) {
+
+		}
 	}
 
+	/** Stargate options tab implementation */
 	public static class StargateRedstoneTab extends LCContainerTab {
 
 		@Override
@@ -135,9 +148,11 @@ public class GUIStargate extends LCContainerGUI {
 
 		@Override
 		protected void drawForegroundLayer(LCContainerGUI container, int mouseX, int mouseY) {
-			// IconButton.drawIcon(Minecraft.getMinecraft(), "cross", 3, 5, 0.5f, 1.0f);
+			// IconButton.drawIcon(Minecraft.getMinecraft(), "cross", 3, 5,
+			// 0.5f, 1.0f);
 			// container.setTextColor(0xFFFFFF);
-			// container.drawString("You don't have permission to configure.", 15, 7);
+			// container.drawString("You don't have permission to configure.",
+			// 15, 7);
 			// container.drawString("Owner: Player1", 15, 22);
 			IconButton.drawIcon(Minecraft.getMinecraft(), "icon_iris", 0, 5, 0.5f, 1.0f);
 			container.setTextColor(0xFFFFFF);
@@ -145,8 +160,8 @@ public class GUIStargate extends LCContainerGUI {
 			IconButton.drawButton(Minecraft.getMinecraft(), "icon_ethernet", 85, 5, mouseX - container.offsetLeft(),
 					mouseY - container.offsetTop(), container.isMouseDown(), 0.5, 1.0f);
 			if (IconButton.buttonHovered(85, 5, mouseX - container.offsetLeft(), mouseY - container.offsetTop(), 0.5))
-				container.drawTooltip(I18n.format("lc.interface.redstone.active_ext"), mouseX - container.offsetLeft(), mouseY
-						- container.offsetTop());
+				container.drawTooltip(I18n.format("lc.interface.redstone.active_ext"), mouseX - container.offsetLeft(),
+						mouseY - container.offsetTop());
 
 		}
 
@@ -168,6 +183,11 @@ public class GUIStargate extends LCContainerGUI {
 
 		}
 
+		@Override
+		protected void update(LCContainerGUI container) {
+
+		}
+
 	}
 
 	private static final HashMap<Integer, LCContainerTab> tabs = new HashMap<Integer, LCContainerTab>();
@@ -176,6 +196,14 @@ public class GUIStargate extends LCContainerGUI {
 		tabs.put(1, new StargateRedstoneTab());
 	}
 
+	/**
+	 * Default constructor
+	 * 
+	 * @param tile
+	 *            The base tile
+	 * @param player
+	 *            The local player
+	 */
 	public GUIStargate(TileStargateBase tile, EntityPlayer player) {
 		super(tile, new ContainerStargate(tile, player));
 		switchTab(0);

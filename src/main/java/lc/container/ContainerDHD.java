@@ -3,20 +3,26 @@ package lc.container;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.ICrafting;
 import lc.common.base.LCContainer;
-import lc.common.base.inventory.FilteredInventory;
 import lc.common.configuration.xml.ComponentConfig;
 import lc.tiles.TileDHD;
 
+/**
+ * DHD container implementation
+ * 
+ * @author AfterLifeLochie
+ *
+ */
 public class ContainerDHD extends LCContainer {
-
-	private TileDHD te;
-	private FilteredInventory filterInventory;
-
+	/**
+	 * Default constructor
+	 * 
+	 * @param tile
+	 *            The DHD tile
+	 * @param player
+	 *            The local player
+	 */
 	public ContainerDHD(TileDHD tile, EntityPlayer player) {
 		super(256, 208);
-		this.te = tile;
-		filterInventory = (FilteredInventory) te.getInventory();
-
 	}
 
 	@Override

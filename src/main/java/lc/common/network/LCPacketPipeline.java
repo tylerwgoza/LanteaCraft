@@ -7,13 +7,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 
 import java.util.EnumMap;
-import java.util.LinkedList;
 import java.util.List;
 
 import lc.common.LCLog;
-import lc.common.network.packets.LCClientUpdate;
-import lc.common.network.packets.LCMultiblockPacket;
-import lc.common.network.packets.LCTileSync;
 import lc.common.network.packets.abs.LCTargetPacket;
 import lc.common.util.math.DimensionPos;
 import net.minecraft.client.Minecraft;
@@ -21,15 +17,16 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.INetHandler;
 import net.minecraft.network.NetHandlerPlayServer;
+import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.common.network.ForgeMessage;
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.network.FMLEmbeddedChannel;
-import cpw.mods.fml.common.network.FMLOutboundHandler;
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
-import cpw.mods.fml.common.network.internal.FMLProxyPacket;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.network.FMLEmbeddedChannel;
+import net.minecraftforge.fml.common.network.FMLOutboundHandler;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
+import net.minecraftforge.fml.common.network.internal.FMLProxyPacket;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * LanteaCraft network connection driver.
@@ -39,21 +36,19 @@ import cpw.mods.fml.relauncher.SideOnly;
  */
 @ChannelHandler.Sharable
 public class LCPacketPipeline extends MessageToMessageCodec<FMLProxyPacket, LCPacket> {
-	private EnumMap<Side, FMLEmbeddedChannel> channels;
-	private LinkedList<Class<? extends LCPacket>> packets = new LinkedList<Class<? extends LCPacket>>();
+
+	/** The channels currently controlled by this pipe */
+	protected EnumMap<Side, FMLEmbeddedChannel> channels;
+	private final LCNetworkController controller;
 
 	/**
-	 * Register a packet
-	 *
-	 * @param clazz
-	 *            The packet class
-	 * @return If the packet was registered successfully.
+	 * Create a new packet pipeline.
+	 * 
+	 * @param controller
+	 *            The network controller instance to bind.
 	 */
-	public boolean registerPacket(Class<? extends LCPacket> clazz) {
-		if (packets.size() > 256 || packets.contains(clazz))
-			return false;
-		packets.add(clazz);
-		return true;
+	public LCPacketPipeline(LCNetworkController controller) {
+		this.controller = controller;
 	}
 
 	/**
@@ -64,24 +59,14 @@ public class LCPacketPipeline extends MessageToMessageCodec<FMLProxyPacket, LCPa
 	 */
 	public void init(String channelName) {
 		channels = NetworkRegistry.INSTANCE.newChannel(channelName, this);
-		registerPacket(LCTileSync.class);
-		registerPacket(LCMultiblockPacket.class);
-		registerPacket(LCClientUpdate.class);
 	}
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, LCPacket msg, List<Object> out) throws Exception {
 		try {
-			Class<? extends LCPacket> clazz = msg.getClass();
-			if (!packets.contains(msg.getClass()))
-				throw new LCNetworkException(String.format("Attempt to send unregistered packet class %s!", msg
-						.getClass().getCanonicalName()));
-
 			ByteBuf buffer = Unpooled.buffer();
-			byte discriminator = (byte) packets.indexOf(clazz);
-			buffer.writeByte(discriminator);
-			msg.encodeInto(ctx, buffer);
-			FMLProxyPacket proxyPacket = new FMLProxyPacket(buffer.copy(), ctx.channel()
+			controller.encodePacket(msg, buffer);
+			FMLProxyPacket proxyPacket = new FMLProxyPacket(new PacketBuffer(buffer), ctx.channel()
 					.attr(NetworkRegistry.FML_CHANNEL).get());
 			out.add(proxyPacket);
 		} catch (Exception e) {
@@ -94,15 +79,7 @@ public class LCPacketPipeline extends MessageToMessageCodec<FMLProxyPacket, LCPa
 	protected void decode(ChannelHandlerContext ctx, FMLProxyPacket msg, List<Object> out) throws Exception {
 		try {
 			ByteBuf payload = msg.payload();
-			byte discriminator = payload.readByte();
-			Class<? extends LCPacket> clazz = packets.get(discriminator);
-			if (clazz == null)
-				throw new LCNetworkException(String.format("Attempt to handlle unregistered packet class %s!",
-						discriminator));
-
-			LCPacket packet = clazz.newInstance();
-			packet.decodeFrom(ctx, payload.slice());
-
+			LCPacket packet = controller.decodePacket(payload);
 			EntityPlayer player;
 			switch (FMLCommonHandler.instance().getEffectiveSide()) {
 			case CLIENT:
@@ -115,13 +92,10 @@ public class LCPacketPipeline extends MessageToMessageCodec<FMLProxyPacket, LCPa
 			default:
 				throw new LCNetworkException("Instance is not client or server. Cannot continue!");
 			}
-
-			if (packet instanceof LCTargetPacket) {
-				LCTargetPacket target = (LCTargetPacket) packet;
-				LCTargetPacket.handlePacket(target, player);
-			} else
-				throw new LCNetworkException(String.format("Unable to handle packet type %s.", clazz.getName()));
-
+			if (msg.getTarget() == Side.SERVER)
+				controller.serverQueue.queue(packet, msg.getTarget(), player);
+			if (msg.getTarget() == Side.CLIENT)
+				controller.clientQueue.queue(packet, msg.getTarget(), player);
 		} catch (Exception e) {
 			LCLog.fatal("Network decode exception on side %s, packet dropped.", FMLCommonHandler.instance()
 					.getEffectiveSide(), e);

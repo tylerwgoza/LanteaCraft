@@ -1,8 +1,6 @@
 package lc.common.network.packets;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-
 import java.io.IOException;
 
 import net.minecraft.nbt.NBTTagCompound;
@@ -43,14 +41,14 @@ public class LCAnimationPacket extends LCNBTPacket {
 	}
 
 	@Override
-	public void encodeInto(ChannelHandlerContext ctx, ByteBuf buffer) throws IOException {
+	public void encodeInto(ByteBuf buffer) throws IOException {
 		writeDimensionPosToBuffer(buffer, target);
 		buffer.writeInt(animationId);
 		writeNBTTagCompoundToBuffer(buffer, compound);
 	}
 
 	@Override
-	public void decodeFrom(ChannelHandlerContext ctx, ByteBuf buffer) throws IOException {
+	public void decodeFrom(ByteBuf buffer) throws IOException {
 		target = readDimensionPosFromBuffer(buffer);
 		animationId = buffer.readInt();
 		compound = readNBTTagCompoundFromBuffer(buffer);

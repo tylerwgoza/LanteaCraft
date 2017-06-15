@@ -5,8 +5,15 @@
 package lc.api.audio;
 
 import lc.api.audio.channel.IMixer;
+import lc.api.audio.streaming.ISoundPosition;
 import lc.api.audio.streaming.ISoundServer;
 
+/**
+ * Interface for sound controller systems at runtime.
+ * 
+ * @author AfterLifeLochie
+ *
+ */
 public interface ISoundController {
 
 	/**
@@ -14,6 +21,15 @@ public interface ISoundController {
 	 *         audio operations.
 	 */
 	boolean ready();
+
+	/**
+	 * Derive a sound position from an object
+	 * 
+	 * @param object
+	 *            The object to derive from
+	 * @return The sound position, or null if no position can be derived
+	 */
+	ISoundPosition getPosition(Object object);
 
 	/**
 	 * Get the current sound server on the system.

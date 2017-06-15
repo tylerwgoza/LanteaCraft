@@ -5,10 +5,10 @@ import java.util.Map;
 import java.util.Random;
 
 import lc.LCRuntime;
-import lc.ResourceAccess;
 import lc.api.defs.IStructureDefinition;
 import lc.common.LCLog;
 import lc.common.impl.registry.StructureRegistry;
+import lc.common.resource.ResourceAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.structure.MapGenStructure;
 import net.minecraft.world.gen.structure.StructureStart;
@@ -22,14 +22,9 @@ import net.minecraft.world.gen.structure.StructureStart;
 public final class LCFeatureGenerator extends MapGenStructure {
 	private final StructureRegistry registry;
 
-	private int maxDistanceBetweenScatteredFeatures;
-	private int minDistanceBetweenScatteredFeatures;
-
 	/** Default constructor */
 	public LCFeatureGenerator() {
 		registry = (StructureRegistry) LCRuntime.runtime.registries().structures();
-		maxDistanceBetweenScatteredFeatures = 32;
-		minDistanceBetweenScatteredFeatures = 8;
 	}
 
 	/**

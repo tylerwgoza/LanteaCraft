@@ -2,17 +2,15 @@ package lc.items;
 
 import java.util.List;
 
-import lc.ResourceAccess;
 import lc.api.components.ComponentType;
 import lc.api.defs.Definition;
 import lc.api.world.OreType;
 import lc.common.base.LCItem;
 import lc.common.configuration.xml.ComponentConfig;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import lc.common.resource.ResourceAccess;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
 
 /**
  * Ore block implementation.

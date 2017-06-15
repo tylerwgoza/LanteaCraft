@@ -16,6 +16,18 @@ import lc.api.audio.streaming.ISound;
 public interface IMixer {
 
 	/**
+	 * Create a channel descriptor on the mixer. The descriptor describes a
+	 * channel and it's properties so that the mixer can retain the channel
+	 * immutably.
+	 * 
+	 * @param name
+	 *            The name of the channel
+	 * @param descriptor
+	 *            The channel's descriptor information
+	 */
+	void createChannelDescriptor(String name, ChannelDescriptor descriptor);
+
+	/**
 	 * Create a channel on the sound mixer. The channel consists of a name and a
 	 * sound stream. The sound stream should not be reassigned once a channel is
 	 * assigned a sound.

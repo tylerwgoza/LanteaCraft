@@ -3,6 +3,7 @@ package lc.tiles;
 import lc.api.components.IntegrationType;
 import lc.api.jit.DeviceDrivers.DriverCandidate;
 import lc.api.rendering.IBlockSkinnable;
+import lc.api.rendering.ITileRenderInfo;
 import lc.common.base.multiblock.LCMultiblockTile;
 import lc.common.base.multiblock.StructureConfiguration;
 import lc.common.configuration.xml.ComponentConfig;
@@ -15,7 +16,7 @@ import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.nbt.NBTTagCompound;
-import cpw.mods.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.Side;
 
 /**
  * Stargate Ring tile implementation.
@@ -100,6 +101,11 @@ public class TileStargateRing extends LCMultiblockTile implements IBlockSkinnabl
 				String.format("Multiblock: %s", getState()),
 				String.format("Ghost block: %s", (clientSkinBlock != null) ? clientSkinBlock.getUnlocalizedName()
 						: "null"), String.format("Ghost metadata: %s", clientSkinBlockMetadata) };
+	}
+
+	@Override
+	public ITileRenderInfo renderInfoTile() {
+		return null;
 	}
 
 	@Override

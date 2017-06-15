@@ -41,6 +41,8 @@ public class Recipes {
 	public IRecipeDefinition stargateRing;
 	/** Stargate chevron crafting recipe */
 	public IRecipeDefinition stargateChevron;
+	/** Frame block */
+	public IRecipeDefinition frame;
 
 	/** Decorator crafting recipe */
 	public IRecipeDefinition decorCrafterRecipe;
@@ -54,6 +56,8 @@ public class Recipes {
 	
 	/** Lantean door recipe */
 	public IRecipeDefinition decorLanteanDoor;
+	/** Goa'uld door recipe */
+	public IRecipeDefinition decorGoauldDoor;
 	
 	/** Goa'uld Gold recipe */
 	public IRecipeDefinition decorGoauldGold;

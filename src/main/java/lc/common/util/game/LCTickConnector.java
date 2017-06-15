@@ -3,14 +3,15 @@ package lc.common.util.game;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
-import cpw.mods.fml.common.gameevent.TickEvent.Phase;
-import cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent;
-import cpw.mods.fml.relauncher.Side;
 import lc.api.event.ITickEventHandler;
 import lc.common.LCLog;
+import lc.common.util.Tracer;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
+import net.minecraftforge.fml.common.gameevent.TickEvent.ServerTickEvent;
+import net.minecraftforge.fml.relauncher.Side;
 
 /**
  * Minecraft tick connection manager.
@@ -74,6 +75,8 @@ public class LCTickConnector {
 	 */
 	@SubscribeEvent
 	public void onClientTick(ClientTickEvent tick) {
+		if (tick.phase != Phase.START)
+			return;
 		update();
 		doTick(Side.CLIENT);
 	}
@@ -97,9 +100,12 @@ public class LCTickConnector {
 	private void doTick(Side what) {
 		for (ITickEventHandler host : children)
 			try {
+				Tracer.begin(this, "tick child: " + host.getClass().getName());
 				host.think(what);
 			} catch (Throwable t) {
 				LCLog.warn("Unhandled exception in ITickEventHandler.", t);
+			} finally {
+				Tracer.end();
 			}
 	}
 

@@ -1,22 +1,22 @@
 package lc;
 
 import lc.common.LCLog;
+import lc.common.util.Tracer;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.event.FMLFingerprintViolationEvent;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLInterModComms.IMCEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerAboutToStartEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppedEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
+import net.minecraftforge.fml.relauncher.FMLRelaunchLog;
 
 import org.apache.logging.log4j.Level;
-
-import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.event.FMLFingerprintViolationEvent;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.event.FMLServerAboutToStartEvent;
-import cpw.mods.fml.common.event.FMLServerStartedEvent;
-import cpw.mods.fml.common.event.FMLServerStartingEvent;
-import cpw.mods.fml.common.event.FMLServerStoppedEvent;
-import cpw.mods.fml.common.event.FMLServerStoppingEvent;
-import cpw.mods.fml.relauncher.FMLRelaunchLog;
 
 /**
  * LanteaCraft FML mod interface
@@ -59,7 +59,9 @@ public class LanteaCraft {
 			LCLog.fatal("You should attempt to reinstall a clean copy of LanteaCraft if you did not");
 			LCLog.fatal("modify it yourself. Going to proceed with loading anyway.");
 		}
+		Tracer.begin(this);
 		LCRuntime.runtime.preinit(event);
+		Tracer.end();
 	}
 
 	/**
@@ -70,7 +72,9 @@ public class LanteaCraft {
 	 */
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent event) {
+		Tracer.begin(this);
 		LCRuntime.runtime.init(event);
+		Tracer.end();
 	}
 
 	/**
@@ -81,7 +85,9 @@ public class LanteaCraft {
 	 */
 	@Mod.EventHandler
 	public void postinit(FMLPostInitializationEvent event) {
+		Tracer.begin(this);
 		LCRuntime.runtime.postinit(event);
+		Tracer.end();
 	}
 
 	/**
@@ -92,7 +98,9 @@ public class LanteaCraft {
 	 */
 	@Mod.EventHandler
 	public void beforeServerStarting(FMLServerAboutToStartEvent event) {
+		Tracer.begin(this);
 		LCRuntime.runtime.beforeServerStarting(event);
+		Tracer.end();
 	}
 
 	/**
@@ -103,7 +111,9 @@ public class LanteaCraft {
 	 */
 	@Mod.EventHandler
 	public void serverStarting(FMLServerStartingEvent event) {
+		Tracer.begin(this);
 		LCRuntime.runtime.serverStarting(event);
+		Tracer.end();
 	}
 
 	/**
@@ -114,7 +124,9 @@ public class LanteaCraft {
 	 */
 	@Mod.EventHandler
 	public void serverStarted(FMLServerStartedEvent event) {
+		Tracer.begin(this);
 		LCRuntime.runtime.serverStarted(event);
+		Tracer.end();
 	}
 
 	/**
@@ -125,7 +137,9 @@ public class LanteaCraft {
 	 */
 	@Mod.EventHandler
 	public void serverStopping(FMLServerStoppingEvent event) {
+		Tracer.begin(this);
 		LCRuntime.runtime.serverStopping(event);
+		Tracer.end();
 	}
 
 	/**
@@ -136,7 +150,9 @@ public class LanteaCraft {
 	 */
 	@Mod.EventHandler
 	public void serverStopped(FMLServerStoppedEvent event) {
+		Tracer.begin(this);
 		LCRuntime.runtime.serverStopped(event);
+		Tracer.end();
 	}
 
 	/**
@@ -147,7 +163,9 @@ public class LanteaCraft {
 	 */
 	@Mod.EventHandler
 	public void signatureViolation(FMLFingerprintViolationEvent event) {
+		Tracer.begin(this);
 		LCRuntime.runtime.signatureViolation(event);
+		Tracer.end();
 	}
 
 	/**
@@ -158,6 +176,8 @@ public class LanteaCraft {
 	 */
 	@Mod.EventHandler
 	public void receiveIMC(IMCEvent event) {
+		Tracer.begin(this);
 		LCRuntime.runtime.receiveIMC(event);
+		Tracer.end();
 	}
 }

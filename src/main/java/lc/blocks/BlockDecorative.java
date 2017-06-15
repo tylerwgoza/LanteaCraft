@@ -2,11 +2,11 @@ package lc.blocks;
 
 import java.util.List;
 
-import lc.ResourceAccess;
 import lc.api.components.ComponentType;
 import lc.api.defs.Definition;
 import lc.common.base.LCBlock;
 import lc.common.configuration.xml.ComponentConfig;
+import lc.common.resource.ResourceAccess;
 import lc.items.ItemBlockDecorative;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
@@ -24,11 +24,27 @@ import net.minecraft.util.IIcon;
 @Definition(name = "blockDecorative", type = ComponentType.DECOR, blockClass = BlockDecorative.class, itemBlockClass = ItemBlockDecorative.class)
 public class BlockDecorative extends LCBlock {
 
+	/**
+	 * Decorative block type map
+	 * 
+	 * @author AfterLifeLochie
+	 *
+	 */
 	public static enum DecorBlockTypes {
-		LantSteel(1, "lantean_metal"), LantDecSteel(2, "lantean_decor"), GoaGold(3, "goauld_goldplain"), GoaDecGold(4,
-				"goauld_golddecor");
+		/** Lantean steel */
+		LantSteel(1, "lantean_metal"),
+		/** Lantean patterned steel */
+		LantDecSteel(2, "lantean_decor"),
+		/** Goa'uld gold */
+		GoaGold(3, "goauld_goldplain"),
+		/** Goa'uld decorative gold */
+		GoaDecGold(4, "goauld_golddecor");
+
+		/** The type ID */
 		public final int idx;
+		/** The resource-name pattern */
 		public final String resource;
+		/** The IIcon icon resource */
 		public IIcon icon;
 
 		DecorBlockTypes(int i, String s) {
@@ -36,6 +52,14 @@ public class BlockDecorative extends LCBlock {
 			resource = s;
 		}
 
+		/**
+		 * Derives a decorative type from a metadata value, or null if no type
+		 * exists.
+		 * 
+		 * @param q
+		 *            The metadata value
+		 * @return The decorative type, or null if none exists
+		 */
 		public static DecorBlockTypes meta(int q) {
 			for (DecorBlockTypes type : values())
 				if (type.idx == q)
@@ -49,6 +73,7 @@ public class BlockDecorative extends LCBlock {
 	/** Default constructor. */
 	public BlockDecorative() {
 		super(Material.ground);
+		setHardness(10);
 		setHarvestLevel("pickaxe", 1);
 		setOpaque(true);
 	}
@@ -84,6 +109,6 @@ public class BlockDecorative extends LCBlock {
 	@Override
 	public void configure(ComponentConfig c) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }

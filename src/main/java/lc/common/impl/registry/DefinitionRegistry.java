@@ -14,23 +14,22 @@ import lc.api.defs.ILanteaCraftRenderer;
 import lc.common.LCLog;
 import lc.common.base.LCBlock;
 import lc.common.base.LCBlockRenderer;
+import lc.common.base.LCEntityRenderer;
 import lc.common.base.LCItem;
 import lc.common.base.LCItemBucket;
 import lc.common.base.LCItemRenderer;
 import lc.common.base.LCTile;
 import lc.common.base.LCTileRenderer;
-import lc.common.configuration.ConfigurationController;
 import lc.common.configuration.IConfigure;
 import lc.common.util.LCCreativeTabManager;
+import lc.common.util.Tracer;
 import net.minecraft.block.Block;
-import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
-import cpw.mods.fml.client.registry.RenderingRegistry;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 /**
  * Global definition registry implementation.
@@ -93,6 +92,7 @@ public class DefinitionRegistry implements IDefinitionRegistry {
 	 *            The FML event initializing the runtime
 	 */
 	public void init(LCRuntime runtime, FMLInitializationEvent event) {
+		Tracer.begin(this);
 		IComponentRegistry components = runtime.registries().components();
 		LCLog.debug("Evaluating %s definitions for candidacy.", definitionPool.size());
 		for (IContainerDefinition definition : definitionPool.values())
@@ -105,8 +105,18 @@ public class DefinitionRegistry implements IDefinitionRegistry {
 				} else
 					LCLog.trace("Dropping registration for element %s, component %s disabled.", element.getName(),
 							element.getComponentOwner());
+			} else if (definition instanceof EntityDefinition) {
+				EntityDefinition element = (EntityDefinition) definition;
+				if (components.isEnabled(element.getComponentOwner())) {
+					LCLog.trace("Registering element %s, component %s enabled.", element.getName(),
+							element.getComponentOwner());
+					element.init(this);
+				} else
+					LCLog.trace("Dropping registration for element %s, component %s disabled.", element.getName(),
+							element.getComponentOwner());
 			} else
 				LCLog.warn("Strange definition type %s, ignoring it.", definition.getClass().getName());
+		Tracer.end();
 	}
 
 	/**
@@ -119,6 +129,8 @@ public class DefinitionRegistry implements IDefinitionRegistry {
 	 *            The class of the item.
 	 * @param unlocalizedName
 	 *            The unlocalized name.
+	 * @param type
+	 *            The type of the component
 	 * @return The Block singleton.
 	 */
 	public <T extends Block> T registerBlock(Class<? extends T> classOf, Class<? extends ItemBlock> itemClassOf,
@@ -148,7 +160,7 @@ public class DefinitionRegistry implements IDefinitionRegistry {
 		try {
 			Constructor<? extends T> ctor = classOf.getConstructor();
 			T theMysteryBlock = ctor.newInstance();
-			theMysteryBlock.setBlockName(unlocalizedName);
+			theMysteryBlock.setUnlocalizedName(unlocalizedName);
 			theMysteryBlock.setCreativeTab(tab);
 			if (theMysteryBlock instanceof IConfigure)
 				((IConfigure) theMysteryBlock).configure(LCRuntime.runtime.config().config(type));
@@ -290,8 +302,11 @@ public class DefinitionRegistry implements IDefinitionRegistry {
 	 * @param renderer
 	 *            The renderer object
 	 */
-	public void registerEntityRenderer(Class<? extends Entity> entity, Object renderer) {
-		RenderingRegistry.registerEntityRenderingHandler(entity, (Render) renderer);
+	public void registerEntityRenderer(Class<? extends Entity> entity, Class<? extends LCEntityRenderer> renderer) {
+		if (!registeredRenderers.containsKey(RendererType.ENTITY))
+			registeredRenderers
+					.put(RendererType.ENTITY, new HashMap<Class<?>, Class<? extends ILanteaCraftRenderer>>());
+		registeredRenderers.get(RendererType.ENTITY).put(entity, renderer);
 	}
 
 	/**

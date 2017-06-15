@@ -2,28 +2,25 @@ package lc.items;
 
 import java.util.List;
 
-import lc.ResourceAccess;
 import lc.api.components.ComponentType;
 import lc.api.defs.Definition;
 import lc.api.rendering.IBlockSkinnable;
 import lc.common.base.LCItem;
 import lc.common.configuration.xml.ComponentConfig;
+import lc.common.resource.ResourceAccess;
 import lc.common.util.data.ImmutablePair;
 import lc.common.util.game.BlockHelper;
 import net.minecraft.block.Block;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import org.lwjgl.input.Keyboard;
-
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 
 /**
  * Decorator tool item implementation.
@@ -80,7 +77,7 @@ public class ItemDecorator extends LCItem {
 		return true;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void addInformation(ItemStack stack, EntityPlayer player, List strings, boolean advancedItemTooltips) {

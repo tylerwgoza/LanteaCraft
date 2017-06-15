@@ -13,13 +13,13 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import lc.LCRuntime;
 import lc.LanteaCraft;
-import lc.ResourceAccess;
 import lc.api.components.ComponentType;
 import lc.api.defs.Definition;
 import lc.api.rendering.IBlockRenderInfo;
 import lc.api.stargate.StargateType;
 import lc.common.base.LCBlock;
 import lc.common.configuration.xml.ComponentConfig;
+import lc.common.resource.ResourceAccess;
 import lc.items.ItemBlockDHD;
 import lc.tiles.TileDHD;
 
@@ -123,7 +123,7 @@ public class BlockDHD extends LCBlock {
 	}
 
 	@Override
-	public IBlockRenderInfo block() {
+	public IBlockRenderInfo renderInfoBlock() {
 		return BlockDHD.renderInfo;
 	}
 
@@ -136,6 +136,17 @@ public class BlockDHD extends LCBlock {
 	 */
 	public int getBaseType(int metadata) {
 		return (int) Math.floor(metadata / blockMask);
+	}
+
+	/**
+	 * Get the type of the DHD for the metadata specified
+	 * 
+	 * @param metadata
+	 *            The metadata value
+	 * @return The type of the DHD
+	 */
+	public StargateType getDHDType(int metadata) {
+		return StargateType.fromOrdinal(getBaseType(metadata));
 	}
 
 	@Override
@@ -152,6 +163,6 @@ public class BlockDHD extends LCBlock {
 	@Override
 	public void configure(ComponentConfig c) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }

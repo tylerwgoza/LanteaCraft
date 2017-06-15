@@ -1,13 +1,28 @@
 package lc.common.network.packets;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-
+import io.netty.buffer.Unpooled;
 import java.io.IOException;
 
+import lc.LCRuntime;
+import lc.common.network.LCNetworkController;
 import lc.common.network.LCPacket;
 
 public class LCServerToServerEnvelope extends LCPacket {
+
+	public static LCServerToServerEnvelope envelope(LCPacket data) throws IOException {
+		LCNetworkController controller = LCRuntime.runtime.network();
+		ByteBuf buffer = Unpooled.buffer();
+		controller.encodePacket(data, buffer);
+		return new LCServerToServerEnvelope(buffer.array(), null);
+	}
+
+	public static LCPacket unenvelope(LCServerToServerEnvelope envelope) throws IOException {
+		LCNetworkController controller = LCRuntime.runtime.network();
+		ByteBuf buffer = Unpooled.wrappedBuffer(envelope.data);
+		LCPacket packet = controller.decodePacket(buffer);
+		return packet;
+	}
 
 	private byte[] data;
 	private byte[] signature;
@@ -36,8 +51,14 @@ public class LCServerToServerEnvelope extends LCPacket {
 		this.signature = signature;
 	}
 
+	public boolean signed() {
+		return signature != null;
+	}
+
 	@Override
-	public void encodeInto(ChannelHandlerContext ctx, ByteBuf buffer) throws IOException {
+	public void encodeInto(ByteBuf buffer) throws IOException {
+		if (data == null || signature == null || data.length == 0 || signature.length == 0)
+			throw new IOException("Illegal encapsulated packet; no data or unsigned.");
 		buffer.writeInt(data.length);
 		buffer.writeInt(signature.length);
 		buffer.writeBytes(data);
@@ -45,7 +66,7 @@ public class LCServerToServerEnvelope extends LCPacket {
 	}
 
 	@Override
-	public void decodeFrom(ChannelHandlerContext ctx, ByteBuf buffer) throws IOException {
+	public void decodeFrom(ByteBuf buffer) throws IOException {
 		data = new byte[buffer.readInt()];
 		signature = new byte[buffer.readInt()];
 		buffer.readBytes(data);

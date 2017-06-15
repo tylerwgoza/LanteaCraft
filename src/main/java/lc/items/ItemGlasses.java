@@ -2,23 +2,21 @@ package lc.items;
 
 import java.util.ArrayList;
 
-import lc.ResourceAccess;
 import lc.api.components.ComponentType;
 import lc.api.defs.Definition;
 import lc.common.LCLog;
 import lc.common.base.LCBlock;
 import lc.common.base.LCTile;
+import lc.common.resource.ResourceAccess;
 import net.minecraft.block.Block;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
-import cpw.mods.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.Side;
 
 /**
  * Debugging glasses implementation

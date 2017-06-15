@@ -1,5 +1,6 @@
 package lc.common.base.multiblock;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import lc.common.util.math.Orientations;
 import lc.common.util.math.Vector3;
 import lc.common.util.math.VectorAABB;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 /**
@@ -77,7 +79,7 @@ public abstract class StructureConfiguration {
 	 */
 	public boolean test(World world, int x, int y, int z, Orientations orientation) {
 		BlockFilter[] mappings = getBlockMappings();
-		Matrix3 rotation = orientation.rotation();
+		Matrix3 rotation = (orientation != null) ? orientation.rotation() : Matrix3.ident;
 		Vector3 origin = new Vector3(x, y, z).sub(rotation.mul(getStructureCenter()));
 		VectorAABB box = VectorAABB.boxOf(origin, getStructureDimensions());
 		List<Vector3> elems = box.contents();
@@ -87,17 +89,54 @@ public abstract class StructureConfiguration {
 			Vector3 tile = origin.add(rotation.mul(mapping));
 
 			try {
-				int cell = getStructureLayout()[mapping.floorX()][mapping.floorY()][mapping.floorZ()];
+				int cell = getStructureLayout()[mapping.rx()][mapping.ry()][mapping.rz()];
 				BlockFilter filter = mappings[cell];
-				if (!filter.matches(world, tile.floorX(), tile.floorY(), tile.floorZ()))
+				if (!filter.matches(world, tile.rx(), tile.ry(), tile.rz()))
 					return false;
 			} catch (IndexOutOfBoundsException bounds) {
 				LCLog.fatal("Access out of bounds: " + bounds.getMessage() + ": "
-						+ String.format("%s %s %s", mapping.floorX(), mapping.floorY(), mapping.floorZ()));
+						+ String.format("%s %s %s", mapping.rx(), mapping.ry(), mapping.rz()));
 				return false;
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Generate a map of all types specified in the structure configuration.
+	 * 
+	 * @param x
+	 *            The x-coordinate to rotate around
+	 * @param y
+	 *            The y-coordinate to rotate around
+	 * @param z
+	 *            The z-coordinate to rotate around
+	 * @param typeof
+	 *            The type of filter path
+	 * @param orientation
+	 *            The rotation
+	 * @return A list of all Vector3 paths which reuslt in a typeof specified.
+	 */
+	public Vector3[] mapType(int x, int y, int z, int typeof, Orientations orientation) {
+		ArrayList<Vector3> vectors = new ArrayList<Vector3>();
+		Matrix3 rotation = (orientation != null) ? orientation.rotation() : Matrix3.ident;
+		Vector3 origin = new Vector3(x, y, z).sub(rotation.mul(getStructureCenter()));
+		VectorAABB box = VectorAABB.boxOf(origin, getStructureDimensions());
+		List<Vector3> elems = box.contents();
+		Iterator<Vector3> each = elems.iterator();
+		while (each.hasNext()) {
+			Vector3 mapping = each.next();
+			Vector3 tile = origin.add(rotation.mul(mapping.add(0.5f, 0.5f, 0.5f)));
+			try {
+				int cell = getStructureLayout()[mapping.rx()][mapping.ry()][mapping.rz()];
+				if (cell == typeof)
+					vectors.add(tile);
+			} catch (IndexOutOfBoundsException bounds) {
+				LCLog.fatal("Access out of bounds: " + bounds.getMessage() + ": "
+						+ String.format("%s %s %s", mapping.rx(), mapping.ry(), mapping.rz()));
+			}
+		}
+		return vectors.toArray(new Vector3[0]);
 	}
 
 	/**
@@ -118,7 +157,7 @@ public abstract class StructureConfiguration {
 	 */
 	public void apply(World world, int x, int y, int z, Orientations orientation, LCMultiblockTile owner) {
 		Vector3 ownerVec = (owner != null) ? new Vector3(owner) : null;
-		Matrix3 rotation = orientation.rotation();
+		Matrix3 rotation = (orientation != null) ? orientation.rotation() : Matrix3.ident;
 		Vector3 origin = new Vector3(x, y, z).sub(rotation.mul(getStructureCenter()));
 		VectorAABB box = VectorAABB.boxOf(origin, getStructureDimensions());
 		List<Vector3> elems = box.contents();
@@ -127,7 +166,7 @@ public abstract class StructureConfiguration {
 			Vector3 mapping = each.next();
 			Vector3 tile = origin.add(rotation.mul(mapping));
 			try {
-				TileEntity wTile = world.getTileEntity(tile.floorX(), tile.floorY(), tile.floorZ());
+				TileEntity wTile = world.getTileEntity(new BlockPos(tile.rx(), tile.ry(), tile.rz()));
 				if (wTile != null && wTile instanceof LCMultiblockTile) {
 					LCMultiblockTile multiTile = (LCMultiblockTile) wTile;
 					if (multiTile.isSlave())
@@ -135,7 +174,7 @@ public abstract class StructureConfiguration {
 				}
 			} catch (IndexOutOfBoundsException bounds) {
 				LCLog.fatal("Access out of bounds: " + bounds.getMessage() + ": "
-						+ String.format("%s %s %s", mapping.floorX(), mapping.floorY(), mapping.floorZ()));
+						+ String.format("%s %s %s", mapping.rx(), mapping.ry(), mapping.rz()));
 			}
 		}
 	}

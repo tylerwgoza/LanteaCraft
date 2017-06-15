@@ -7,22 +7,32 @@ import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.IIcon;
-import lc.ResourceAccess;
+import net.minecraft.world.World;
 import lc.api.components.ComponentType;
 import lc.api.defs.Definition;
 import lc.api.world.OreType;
 import lc.common.base.LCBlock;
 import lc.common.configuration.xml.ComponentConfig;
+import lc.common.resource.ResourceAccess;
 import lc.items.ItemBlockObelisk;
 
+/**
+ * Obelisk block implementation
+ * 
+ * @author AfterLifeLochie
+ *
+ */
 @Definition(name = "blockObelisk", type = ComponentType.DECOR, blockClass = BlockObelisk.class, itemBlockClass = ItemBlockObelisk.class)
 public class BlockObelisk extends LCBlock {
 
 	private IIcon missing;
 
+	/** Default constructor */
 	public BlockObelisk() {
 		super(Material.ground);
+		setProvidesTypes(true);
 	}
 
 	@Override
@@ -52,7 +62,17 @@ public class BlockObelisk extends LCBlock {
 	@Override
 	public void configure(ComponentConfig c) {
 		// TODO Auto-generated method stub
-		
+
+	}
+
+	@Override
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
+		return AxisAlignedBB.getBoundingBox(x, y, z, x + 1, y + 3, z + 1);
+	}
+
+	@Override
+	public AxisAlignedBB getSelectedBoundingBoxFromPool(World world, int x, int y, int z) {
+		return getCollisionBoundingBoxFromPool(world, x, y, z);
 	}
 
 }

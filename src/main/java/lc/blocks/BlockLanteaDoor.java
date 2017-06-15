@@ -1,12 +1,15 @@
 package lc.blocks;
 
+import java.util.List;
 import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
@@ -19,16 +22,21 @@ import lc.common.configuration.xml.ComponentConfig;
 import lc.items.ItemLanteaDoor;
 import lc.tiles.TileLanteaDoor;
 
+/**
+ * LanteaCraft door block implementation
+ * 
+ * @author AfterLifeLochie
+ *
+ */
 @Definition(name = "lanteaDoor", type = ComponentType.DECOR, blockClass = BlockLanteaDoor.class, itemBlockClass = ItemLanteaDoor.class, tileClass = TileLanteaDoor.class)
 public class BlockLanteaDoor extends LCBlock {
 
-	private IIcon doorIcon;
+	private static final int blockCount = 2;
 
+	/** Default constructor */
 	public BlockLanteaDoor() {
 		super(Material.ground);
-		setOpaque(false);
-		setProvidesInventory(false);
-		setCanRotate(true);
+		setOpaque(false).setProvidesInventory(false).setProvidesTypes(true).setCanRotate(true);
 	}
 
 	@Override
@@ -63,6 +71,18 @@ public class BlockLanteaDoor extends LCBlock {
 
 	public Item getItemDropped(int metadata, Random random, int fortune) {
 		return LCRuntime.runtime.blocks().lanteaDoor.getItem();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Override
+	public void getSubBlocks(Item item, CreativeTabs tab, List list) {
+		for (int i = 0; i < blockCount; i++)
+			list.add(new ItemStack(item, 1, i));
+	}
+
+	@Override
+	public int damageDropped(int metadata) {
+		return metadata;
 	}
 
 	/**

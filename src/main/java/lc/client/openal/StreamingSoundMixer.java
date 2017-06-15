@@ -2,16 +2,30 @@ package lc.client.openal;
 
 import java.util.HashMap;
 
+import lc.api.audio.ISoundController;
+import lc.api.audio.channel.ChannelDescriptor;
 import lc.api.audio.channel.IMixer;
 import lc.api.audio.streaming.ISound;
+import lc.common.util.java.DestructableReference;
 
 public class StreamingSoundMixer implements IMixer {
 
+	private final ISoundController controller;
+	private final DestructableReference<Object> owner;
 	private final HashMap<String, ISound> channels;
+	private final HashMap<String, ChannelDescriptor> descriptors;
 	private boolean dead;
 
-	public StreamingSoundMixer() {
+	public StreamingSoundMixer(ISoundController controller, Object owner) {
+		this.controller = controller;
+		this.owner = new DestructableReference<Object>(owner);
 		this.channels = new HashMap<String, ISound>();
+		this.descriptors = new HashMap<String, ChannelDescriptor>();
+	}
+
+	@Override
+	public void createChannelDescriptor(String name, ChannelDescriptor descriptor) {
+		descriptors.put(name, descriptor);
 	}
 
 	@Override
@@ -88,6 +102,15 @@ public class StreamingSoundMixer implements IMixer {
 	public void think() {
 		if (dead && shutdown(false))
 			dead = false;
+		Object oz = owner.get();
+		if (oz != null) {
+			for (ChannelDescriptor descriptor : descriptors.values())
+				if (!hasChannel(descriptor.name)) {
+					ISound what = controller.getSoundService().assign(oz, descriptor.file, controller.getPosition(oz),
+							descriptor.properties);
+					if (what != null)
+						createChannel(descriptor.name, what);
+				}
+		}
 	}
-
 }

@@ -93,7 +93,7 @@ public class StargateCharsetHelper {
 		for (int i = 0; i < radix.length; i++)
 			if (radix[i] == c)
 				return i;
-		throw new NumberFormatException("Illegal radix value.");
+		throw new NumberFormatException(String.format("Illegal radix value `%s`.", c));
 	}
 
 	/**
@@ -105,11 +105,11 @@ public class StargateCharsetHelper {
 	 */
 	public char index(int i) {
 		if (0 > i || i > radix.length)
-			throw new NumberFormatException("Illegal radix value.");
+			throw new NumberFormatException(String.format("Illegal radix value `%s`.", i));
 		return radix[i];
 	}
 
-	private String longToAddress(long value, int width) {
+	public String longToAddress(long value, int width) {
 		final char[] buf = new char[width];
 		while (width > 0) {
 			buf[--width] = index((int) (value % radix.length));

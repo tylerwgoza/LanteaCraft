@@ -126,6 +126,7 @@ public abstract class LCBlockRenderer implements ILanteaCraftRenderer, IConfigur
 		Tessellator tess = Tessellator.instance;
 		tess.setColorOpaque_F(1, 1, 1);
 		tess.startDrawingQuads();
+		GL11.glTranslatef(0.0f, -0.1f, 0.0f);
 		renderCube(tess, trans, null, block, 0, 0, 0, metadata, 0xf000f0);
 		tess.draw();
 	}
@@ -355,12 +356,12 @@ public abstract class LCBlockRenderer implements ILanteaCraftRenderer, IConfigur
 		for (int i = 0; i < 6; i++) {
 			selectTile(block.getIcon(i, data));
 			if (world != null) {
-				ForgeDirection d = ForgeDirection.getOrientation(i);
+				EnumFacing d = EnumFacing.VALUES[i];
 				Vector3 p = t.p(d.offsetX, d.offsetY, d.offsetZ);
-				tess.setBrightness(block.getMixedBrightnessForBlock(world, p.floorX(), p.floorY(), p.floorZ()));
+				tess.setBrightness(block.getMixedBrightnessForBlock(world, p.fx(), p.fy(), p.fz()));
 			} else
 				tess.setBrightness(brightness);
-			cubeFace(tess, t, cubeMap[i]);
+			cubeFace(tess, t.translate(0.5d, 0.5d, 0.5d), cubeMap[i]);
 		}
 	}
 

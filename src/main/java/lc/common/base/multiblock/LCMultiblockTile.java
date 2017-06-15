@@ -10,11 +10,13 @@ import lc.common.base.LCTile;
 import lc.common.network.LCNetworkException;
 import lc.common.network.LCPacket;
 import lc.common.network.packets.LCMultiblockPacket;
+import lc.common.util.Tracer;
 import lc.common.util.math.DimensionPos;
 import lc.common.util.math.Vector3;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.BlockPos;
 
 /**
  * Internal multi-block implementation.
@@ -97,7 +99,7 @@ public abstract class LCMultiblockTile extends LCTile {
 			if (!multiblockCompound.hasKey("owner"))
 				return MultiblockState.NONE;
 			Vector3 owner = Vector3.from(multiblockCompound.getCompoundTag("owner"));
-			TileEntity tile = worldObj.getTileEntity(owner.floorX(), owner.floorY(), owner.floorZ());
+			TileEntity tile = worldObj.getTileEntity(new BlockPos(owner.fx(), owner.fy(), owner.fz()));
 			if (!(tile instanceof LCMultiblockTile))
 				return MultiblockState.NONE;
 			return ((LCMultiblockTile) tile).getState();
@@ -139,6 +141,7 @@ public abstract class LCMultiblockTile extends LCTile {
 	@Override
 	public void thinkServerPost() {
 		super.thinkServerPost();
+		Tracer.begin(this);
 		thinkMultiblock();
 		MultiblockState next = nextState();
 		if (next != null && next != getState()) {
@@ -149,23 +152,28 @@ public abstract class LCMultiblockTile extends LCTile {
 		if (multiblockNbtDirty) {
 			multiblockNbtDirty = false;
 			LCMultiblockPacket update = new LCMultiblockPacket(new DimensionPos(this), multiblockCompound);
-			LCRuntime.runtime.network().sendToAllAround(update, update.target, 128.0d);
+			LCRuntime.runtime.network().getPreferredPipe().sendToAllAround(update, update.target, 128.0d);
 		}
+		Tracer.end();
 	}
 
 	@Override
 	public void thinkPacket(LCPacket packet, EntityPlayer player) throws LCNetworkException {
+		Tracer.begin(this);
 		if (packet instanceof LCMultiblockPacket)
 			if (worldObj.isRemote) {
 				multiblockCompound = ((LCMultiblockPacket) packet).compound;
-				worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+				worldObj.markBlockForUpdate(getPos());
 			}
+		Tracer.end();
 	}
 
 	@Override
 	public void sendPackets(List<LCPacket> packets) throws LCNetworkException {
 		super.sendPackets(packets);
+		Tracer.begin(this);
 		packets.add(new LCMultiblockPacket(new DimensionPos(this), multiblockCompound));
+		Tracer.end();
 	}
 
 	@Override

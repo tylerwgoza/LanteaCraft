@@ -8,7 +8,9 @@ import lc.common.base.LCBlock;
 import lc.common.base.LCItem;
 import lc.common.base.LCItemBlock;
 import lc.common.base.LCTile;
+import lc.common.util.Tracer;
 import net.minecraft.block.Block;
+import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -94,6 +96,7 @@ public class BlockItemDefinition implements IContainerDefinition {
 	public void init(DefinitionRegistry registry) {
 		if (!LCRuntime.runtime.registries().components().isEnabled(ownerType))
 			return;
+		Tracer.begin(this);
 		if (blockType != null && itemBlockType != null) {
 			blockObject = registry.registerBlock(blockType, itemBlockType, defName, ownerType);
 			blockObject.setProvidesTile(tileType);
@@ -106,6 +109,7 @@ public class BlockItemDefinition implements IContainerDefinition {
 		} else if (itemType != null)
 			itemObject = registry.registerItem(itemType, defName, ownerType);
 		LCRuntime.runtime.hints().provideHints(this);
+		Tracer.end();
 	}
 
 	@Override
@@ -126,6 +130,11 @@ public class BlockItemDefinition implements IContainerDefinition {
 	@Override
 	public Class<? extends TileEntity> getTileType() {
 		return tileType;
+	}
+
+	@Override
+	public Class<? extends Entity> getEntityType() {
+		return null;
 	}
 
 	@Override

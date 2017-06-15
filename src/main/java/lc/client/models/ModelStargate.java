@@ -2,8 +2,10 @@ package lc.client.models;
 
 import static lc.client.opengl.GLHelper.pushTexVertex;
 import lc.client.opengl.BufferDisplayList;
-import lc.client.render.TileStargateBaseRenderer;
+import lc.client.render.fabs.tiles.TileStargateBaseRenderer;
 import lc.common.base.pipeline.LCTileRenderPipeline;
+import lc.common.resource.ResourceMap;
+import lc.common.util.data.StateMap;
 import lc.common.util.math.Orientations;
 import lc.tiles.TileStargateBase;
 
@@ -17,36 +19,35 @@ import org.lwjgl.opengl.GL11;
  */
 public class ModelStargate {
 
-	private final static int numRingSegments = 38;
-	private final static double ringSymbolAngle = 360.0 / 38;
-	private final static double ringSymbolTextureLength = 38 * 8;
-	private final static double ringSymbolTextureHeight = 12;
-	private final static double ringSymbolSegmentWidth = ringSymbolTextureLength / numRingSegments;
+	public final static int numRingSegments = 38;
+	public final static double ringSymbolAngle = 360.0 / 38;
+	public final static double ringSymbolTextureLength = 38 * 8;
+	public final static double ringSymbolTextureHeight = 12;
+	public final static double ringSymbolSegmentWidth = ringSymbolTextureLength / numRingSegments;
 
-	private final static double ringInnerRadius = 2.75;
-	private final static double ringInnerMovingRadius = ringInnerRadius + 0.15;
-	private final static double ringOuterRadius = 3.5;
-	private final static double ringMidRadius = ringInnerMovingRadius + (ringOuterRadius - ringInnerMovingRadius) / 2;
+	public final static double ringInnerRadius = 2.75;
+	public final static double ringInnerMovingRadius = ringInnerRadius + 0.15;
+	public final static double ringOuterRadius = 3.5;
+	public final static double ringMidRadius = ringInnerMovingRadius + (ringOuterRadius - ringInnerMovingRadius) / 2;
 
-	private final static double ringDepth = 0.15;
-	private final static int numChevrons = 9;
-	private final static double chevronInnerRadius = ringMidRadius;
-	private final static double chevronOuterRadius = ringOuterRadius + 1 / 16.0;
-	private final static double chevronWidth = 0.5;
-	private final static double chevronDepth = 0.0625d;
-	private final static double chevronBorderWidth = chevronWidth / 6;
-	private final static double chevronMotionDistance = 1 / 16.0d;
-	private final static double chevronAngle = 360.0 / numChevrons;
-	private final static double chevronAngleOffset = -90.0 + chevronWidth;
+	public final static double ringDepth = 0.15;
+	public final static int numChevrons = 9;
+	public final static double chevronInnerRadius = ringMidRadius;
+	public final static double chevronOuterRadius = ringOuterRadius + 1 / 16.0;
+	public final static double chevronWidth = 0.5;
+	public final static double chevronDepth = 0.0625d;
+	public final static double chevronBorderWidth = chevronWidth / 6;
+	public final static double chevronAngle = 360.0 / numChevrons;
+	public final static double chevronAngleOffset = -90.0 + chevronWidth;
 
-	private final static int ringFaceTextureIndex = 0x14;
-	private final static int ringTextureIndex = 0x15;
-	private final static int ringSymbolTextureIndex = 0x20;
-	private final static int chevronTextureIndex = 0x05;
-	private final static int chevronLitTextureIndex = 0x16;
+	public final static int ringFaceTextureIndex = 0x14;
+	public final static int ringTextureIndex = 0x15;
+	public final static int ringSymbolTextureIndex = 0x20;
+	public final static int chevronTextureIndex = 0x05;
+	public final static int chevronLitTextureIndex = 0x16;
 
-	private static double sin[] = new double[numRingSegments + 1];
-	private static double cos[] = new double[numRingSegments + 1];
+	public static double sin[] = new double[numRingSegments + 1];
+	public static double cos[] = new double[numRingSegments + 1];
 
 	private static double chevronRotations[] = new double[numChevrons + 1];
 
@@ -63,10 +64,6 @@ public class ModelStargate {
 
 	/** Display buffer for outer shell */
 	private final BufferDisplayList listShell = new BufferDisplayList();
-	/** Display buffer for chevron */
-	private final BufferDisplayList listChevron = new BufferDisplayList();
-	/** Display buffer for lit chevron */
-	private final BufferDisplayList listLitChevron = new BufferDisplayList();
 	/** Display buffer for inner ring */
 	private final BufferDisplayList listRing = new BufferDisplayList();
 
@@ -79,26 +76,12 @@ public class ModelStargate {
 	/** Initialize the model. */
 	public void init() {
 		listShell.init();
-		listChevron.init();
-		listLitChevron.init();
 		listRing.init();
 
 		if (listShell.supported()) {
 			listShell.enter();
 			renderShellImmediate();
 			listShell.exit();
-		}
-
-		if (listChevron.supported()) {
-			listChevron.enter();
-			renderChevronImmediate(false);
-			listChevron.exit();
-		}
-
-		if (listLitChevron.supported()) {
-			listLitChevron.enter();
-			renderChevronImmediate(true);
-			listLitChevron.exit();
 		}
 
 		if (listRing.supported()) {
@@ -117,10 +100,15 @@ public class ModelStargate {
 	 *            The tile rendering hook
 	 * @param tile
 	 *            The tile entity
+	 * @param state
+	 *            The model state
 	 */
-	public void render(TileStargateBaseRenderer renderer, LCTileRenderPipeline tesr, TileStargateBase tile) {
+	public void render(TileStargateBaseRenderer renderer, LCTileRenderPipeline tesr, TileStargateBase tile,
+			StateMap state) {
 		GL11.glRotatef(Orientations.from(tile.getRotation()).angle(), 0, 1, 0);
-		tesr.bind(renderer.texFrame);
+		ResourceMap resources = renderer.resources;
+		ResourceMap textures = resources.map(tile.getStargateType().getName());
+		tesr.bind(textures.resource("frame"));
 		if (listShell.supported()) {
 			listShell.bind();
 			listShell.release();
@@ -130,20 +118,20 @@ public class ModelStargate {
 		for (int i = 0; i < numChevrons; i++) {
 			GL11.glPushMatrix();
 			GL11.glRotated(chevronRotations[i], 0.0f, 0.0f, 1.0f);
-			if (listChevron.supported()) {
-				listChevron.bind();
-				listChevron.release();
-			} else
-				renderChevronImmediate(false);
+			GL11.glTranslated(-state.get("chevron-dist-" + i, 0.0d), 0, 0);
+			renderChevronImmediate(state.get("chevron-light-" + i, 0.0d));
 			GL11.glPopMatrix();
 		}
 
-		tesr.bind(renderer.texGlyphs);
+		tesr.bind(textures.resource("glyphs"));
+		GL11.glPushMatrix();
+		GL11.glRotated(state.get("ring-rotation", 0.0d), 0.0f, 0.0f, 1.0f);
 		if (listRing.supported()) {
 			listRing.bind();
 			listRing.release();
 		} else
 			renderRingImmediate();
+		GL11.glPopMatrix();
 	}
 
 	private void renderShellImmediate() {
@@ -217,7 +205,7 @@ public class ModelStargate {
 		GL11.glEnd();
 	}
 
-	private void renderChevronImmediate(boolean lit) {
+	private void renderChevronImmediate(double light) {
 		double r1 = chevronInnerRadius - 1d / 18d;
 		double r2 = chevronOuterRadius;
 
@@ -291,12 +279,11 @@ public class ModelStargate {
 		vertex(x2, y2, z3, 16, 0);
 
 		GL11.glEnd();
-
 		selectTile(chevronLitTextureIndex);
-		if (!lit)
-			GL11.glColor3d(0.5, 0.5, 0.5);
-		else
+		if (light > 0.0d)
 			GL11.glDisable(GL11.GL_LIGHTING);
+		GL11.glColor3d(0.5d + light, 0.5d + light, 0.5d + light);
+
 		GL11.glBegin(GL11.GL_QUADS);
 
 		// Front lit face

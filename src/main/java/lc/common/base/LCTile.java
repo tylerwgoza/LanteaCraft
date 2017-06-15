@@ -7,12 +7,15 @@ import java.util.List;
 
 import lc.LCRuntime;
 import lc.api.audio.ISoundController;
+import lc.api.audio.channel.ChannelDescriptor;
 import lc.api.audio.channel.IMixer;
 import lc.api.audio.streaming.ISound;
 import lc.api.audio.streaming.ISoundProperties;
 import lc.api.audio.streaming.ISoundServer;
 import lc.api.event.IBlockEventHandler;
-import lc.client.openal.StreamingSoundPosition;
+import lc.api.rendering.IBlockRenderInfo;
+import lc.api.rendering.IEntityRenderInfo;
+import lc.api.rendering.IRenderInfo;
 import lc.common.LCLog;
 import lc.common.configuration.IConfigure;
 import lc.common.network.IPacketHandler;
@@ -20,6 +23,7 @@ import lc.common.network.LCNetworkException;
 import lc.common.network.LCPacket;
 import lc.common.network.packets.LCClientUpdate;
 import lc.common.network.packets.LCTileSync;
+import lc.common.util.Tracer;
 import lc.common.util.java.DestructableReferenceQueue;
 import lc.common.util.math.DimensionPos;
 import net.minecraft.entity.player.EntityPlayer;
@@ -29,17 +33,20 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.Packet;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraftforge.common.util.ForgeDirection;
-import cpw.mods.fml.relauncher.Side;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ITickable;
+import net.minecraftforge.fml.relauncher.Side;
 
 /**
  * Generic tile-entity implementation with default handlers.
  *
  * @author AfterLifeLochie
  */
-public abstract class LCTile extends TileEntity implements IInventory, IPacketHandler, IBlockEventHandler, IConfigure {
+public abstract class LCTile extends TileEntity implements ITickable, IInventory, IPacketHandler, IBlockEventHandler, IRenderInfo,
+		IConfigure {
 
 	private static HashMap<Class<? extends LCTile>, HashMap<String, ArrayList<String>>> callbacks = new HashMap<Class<? extends LCTile>, HashMap<String, ArrayList<String>>>();
+	private static HashMap<Class<? extends LCTile>, ArrayList<ChannelDescriptor>> channels = new HashMap<Class<? extends LCTile>, ArrayList<ChannelDescriptor>>();
 
 	/**
 	 * Register an event callback on a class. Must provide the method name, the
@@ -66,20 +73,42 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	}
 
 	/**
+	 * Register a channel descriptor on a class. Must provide the self class and
+	 * the descriptor to register.
+	 * 
+	 * @param me
+	 *            The self class.
+	 * @param descriptor
+	 *            The descriptor to register.
+	 */
+	@SuppressWarnings("unchecked")
+	public static void registerChannel(Class<?> me, ChannelDescriptor descriptor) {
+		Class<? extends LCTile> tile = (Class<? extends LCTile>) me;
+		if (!channels.containsKey(tile))
+			channels.put(tile, new ArrayList<ChannelDescriptor>());
+		ArrayList<ChannelDescriptor> descriptors = channels.get(tile);
+		if (!descriptors.contains(descriptor))
+			descriptors.add(descriptor);
+		LCLog.debug("Adding sound descriptor %s on class %s", descriptor, me.getName());
+	}
+
+	/**
 	 * Perform a set of callbacks now, if any are registered for an event.
 	 *
 	 * @param me
 	 *            The self object
 	 * @param type
 	 *            The type of event
+	 * @param params
+	 *            The parameters to callback, if any
 	 */
-	public static void doCallbacksNow(Object me, String type) {
+	public static void doCallbacksNow(Object me, String type, Object... params) {
 		@SuppressWarnings("unchecked")
 		Class<? extends LCTile> meClazz = (Class<? extends LCTile>) me.getClass();
 		ArrayList<String> cbs = getCallbacks(meClazz, type);
 		if (cbs == null)
 			return;
-		doCallbacks(meClazz, me, cbs);
+		doCallbacks(meClazz, me, cbs, params);
 	}
 
 	/**
@@ -110,19 +139,40 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	 *            The self object
 	 * @param methods
 	 *            The methods to invoke
+	 * @param aparams
+	 *            The parameters to callback with
 	 */
-	public static void doCallbacks(Class<? extends LCTile> me, Object meObject, ArrayList<String> methods) {
+	public static void doCallbacks(Class<? extends LCTile> me, Object meObject, ArrayList<String> methods,
+			Object[] aparams) {
+		Tracer.begin(meObject);
 		Method[] meMethods = me.getMethods();
 		for (String methodName : methods)
 			for (Method invoke : meMethods)
 				if (invoke.getName().equalsIgnoreCase(methodName)) {
 					try {
-						invoke.invoke(meObject, new Object[] { (LCTile) meObject });
+						if (aparams == null)
+							invoke.invoke(meObject, new Object[] { (LCTile) meObject });
+						else
+							invoke.invoke(meObject, aparams);
 					} catch (Throwable t) {
 						LCLog.warn("Error when processing callback %s!", methodName, t);
 					}
 					break;
 				}
+		Tracer.end();
+	}
+
+	/**
+	 * Get all the known descriptors for a provided self class.
+	 * 
+	 * @param me
+	 *            The self class
+	 * @return The list of all known descriptors
+	 */
+	public static ChannelDescriptor[] getDescriptors(Class<? extends LCTile> me) {
+		if (!channels.containsKey(me))
+			return null;
+		return channels.get(me).toArray(new ChannelDescriptor[0]);
 	}
 
 	/**
@@ -152,7 +202,7 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	 * Invocation of update methods is as follows:
 	 * 
 	 * <pre>
-	 * updateEntity() [Minecraft] {
+	 * update() [Minecraft] {
 	 * - thinkClient()
 	 * - thinkClientPost()
 	 * - requestUpdatePacket()
@@ -172,7 +222,7 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	 * Invocation of update methods is as follows:
 	 * 
 	 * <pre>
-	 * updateEntity() [Minecraft] {
+	 * update() [Minecraft] {
 	 * - thinkClient()
 	 * - thinkClientPost()
 	 * - requestUpdatePacket()
@@ -192,7 +242,7 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	 * Invocation of update methods is as follows:
 	 * 
 	 * <pre>
-	 * updateEntity() [Minecraft] {
+	 * update() [Minecraft] {
 	 * - thinkServer()
 	 * - thinkServerPost()
 	 * - sendUpdatePackets()
@@ -210,7 +260,7 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	 * Invocation of update methods is as follows:
 	 * 
 	 * <pre>
-	 * updateEntity() [Minecraft] {
+	 * update() [Minecraft] {
 	 * - thinkServer()
 	 * - thinkServerPost()
 	 * - sendUpdatePackets()
@@ -294,10 +344,10 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	 *
 	 * @return The canRotate of the block.
 	 */
-	public ForgeDirection getRotation() {
+	public EnumFacing getRotation() {
 		if (compound == null || !compound.hasKey("canRotate"))
-			return ForgeDirection.NORTH;
-		return ForgeDirection.getOrientation(compound.getInteger("canRotate"));
+			return EnumFacing.NORTH;
+		return EnumFacing.VALUES[compound.getInteger("canRotate")];
 	}
 
 	/**
@@ -306,7 +356,7 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	 * @param direction
 	 *            The canRotate.
 	 */
-	public void setRotation(ForgeDirection direction) {
+	public void setRotation(EnumFacing direction) {
 		if (compound == null)
 			compound = new NBTTagCompound();
 		compound.setInteger("canRotate", direction.ordinal());
@@ -364,26 +414,55 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 		clientDataDirty = true;
 	}
 
-	private void sendUpdatesToClients() {
+	/**
+	 * Send updated data to all clients on the server.
+	 */
+	protected void sendUpdatesToClients() {
+		Tracer.begin(this);
 		try {
 			ArrayList<LCPacket> packets = new ArrayList<LCPacket>();
 			sendPackets(packets);
 			for (LCPacket packet : packets)
-				LCRuntime.runtime.network().sendScoped(packet, 128.0d);
+				sendPacketToClients(packet);
 		} catch (LCNetworkException e) {
 			LCLog.warn("Error sending network update.", e);
 		}
+		Tracer.end();
+	}
+
+	/**
+	 * Send a packet to all clients on the server
+	 * 
+	 * @param packet
+	 *            The packet to send
+	 */
+	protected void sendPacketToClients(LCPacket packet) {
+		LCRuntime.runtime.network().getPreferredPipe().sendScoped(packet, 128.0d);
 	}
 
 	private void sendUpdatesToClient(EntityPlayerMP player) {
+		Tracer.begin(this);
 		try {
 			ArrayList<LCPacket> packets = new ArrayList<LCPacket>();
 			sendPackets(packets);
 			for (LCPacket packet : packets)
-				LCRuntime.runtime.network().sendTo(packet, player);
+				sendPacketToClient(packet, player);
 		} catch (LCNetworkException e) {
 			LCLog.warn("Error sending network update.", e);
 		}
+		Tracer.end();
+	}
+
+	/**
+	 * Send a packet to a specific client
+	 * 
+	 * @param packet
+	 *            The packet to send
+	 * @param player
+	 *            The player to send to
+	 */
+	protected void sendPacketToClient(LCPacket packet, EntityPlayerMP player) {
+		LCRuntime.runtime.network().getPreferredPipe().sendTo(packet, player);
 	}
 
 	@Override
@@ -392,19 +471,19 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 			if (worldObj.isRemote) {
 				clientDataDirty = false;
 				compound = ((LCTileSync) packetOf).compound;
-				worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+				worldObj.markBlockForUpdate(getPos());
 			}
 		if (packetOf instanceof LCClientUpdate)
 			if (!worldObj.isRemote)
 				sendUpdatesToClient((EntityPlayerMP) player);
 			else
 				throw new LCNetworkException("Can't handle LCClientUpdates on the client!");
-		thinkPacket(packetOf, player);
-	}
-
-	@Override
-	public boolean canUpdate() {
-		return true;
+		try {
+			Tracer.begin(this, "thinkPacket implementation");
+			thinkPacket(packetOf, player);
+		} finally {
+			Tracer.end();
+		}
 	}
 
 	/**
@@ -415,28 +494,35 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	 * </p>
 	 */
 	@Override
-	public void updateEntity() {
+	public void update() {
+		Tracer.begin(this);
 		if (worldObj != null)
 			if (worldObj.isRemote) {
+				Tracer.begin(this, "thinkClient implementation");
 				thinkClient();
 				thinkClientPost();
+				Tracer.end();
 				if (clientDataDirty) {
 					if (clientDataCooldown > 0)
 						clientDataCooldown--;
 					if (clientDataCooldown <= 0) {
-						LCRuntime.runtime.network().sendToServer(new LCClientUpdate(new DimensionPos(this)));
+						LCRuntime.runtime.network().getPreferredPipe()
+								.sendToServer(new LCClientUpdate(new DimensionPos(this)));
 						clientDataCooldown += (30 * 20);
 					}
 				}
 			} else {
+				Tracer.begin(this, "thinkServer implementation");
 				thinkServer();
 				thinkServerPost();
+				Tracer.end();
 				if (nbtDirty) {
 					nbtDirty = false;
 					LCTileSync packet = new LCTileSync(new DimensionPos(this), compound);
-					LCRuntime.runtime.network().sendToAllAround(packet, packet.target, 128.0d);
+					LCRuntime.runtime.network().getPreferredPipe().sendToAllAround(packet, packet.target, 128.0d);
 				}
 			}
+		Tracer.end();
 	}
 
 	@Override
@@ -487,32 +573,12 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 		return getInventory().decrStackSize(p_70298_1_, p_70298_2_);
 	}
 
-	@Override
-	public ItemStack getStackInSlotOnClosing(int p_70304_1_) {
-		if (getInventory() == null)
-			return null;
-		return getInventory().getStackInSlotOnClosing(p_70304_1_);
-	}
 
 	@Override
 	public void setInventorySlotContents(int p_70299_1_, ItemStack p_70299_2_) {
 		if (getInventory() == null)
 			return;
 		getInventory().setInventorySlotContents(p_70299_1_, p_70299_2_);
-	}
-
-	@Override
-	public String getInventoryName() {
-		if (getInventory() == null)
-			return null;
-		return getInventory().getInventoryName();
-	}
-
-	@Override
-	public boolean hasCustomInventoryName() {
-		if (getInventory() == null)
-			return false;
-		return getInventory().hasCustomInventoryName();
 	}
 
 	@Override
@@ -530,17 +596,17 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	}
 
 	@Override
-	public void openInventory() {
+	public void openInventory(EntityPlayer player) {
 		if (getInventory() == null)
 			return;
-		getInventory().openInventory();
+		getInventory().openInventory(player);
 	}
 
 	@Override
-	public void closeInventory() {
+	public void closeInventory(EntityPlayer player) {
 		if (getInventory() == null)
 			return;
-		getInventory().closeInventory();
+		getInventory().closeInventory(player);
 	}
 
 	@Override
@@ -553,7 +619,15 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	@Override
 	public Packet getDescriptionPacket() {
 		if (worldObj.isRemote)
-			LCRuntime.runtime.network().sendToServer(new LCClientUpdate(new DimensionPos(this)));
+			LCRuntime.runtime.network().getPreferredPipe().sendToServer(new LCClientUpdate(new DimensionPos(this)));
+		return null;
+	}
+
+	public IEntityRenderInfo renderInfoEntity() {
+		return null;
+	}
+
+	public IBlockRenderInfo renderInfoBlock() {
 		return null;
 	}
 
@@ -564,13 +638,16 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 	 * @return The sound mixer for this tile-entity, or null if no mixer is
 	 *         available.
 	 */
-	protected IMixer mixer() {
+	public IMixer mixer() {
 		if (clientMixer != null)
 			return clientMixer;
 		ISoundController sys = LCRuntime.runtime.hints().audio();
 		if (sys == null || !sys.ready())
 			return null;
 		clientMixer = sys.findMixer(this);
+		ChannelDescriptor[] descriptors = getDescriptors(getClass());
+		for (ChannelDescriptor descriptor : descriptors)
+			clientMixer.createChannelDescriptor(descriptor.name, descriptor);
 		return clientMixer;
 	}
 
@@ -592,7 +669,7 @@ public abstract class LCTile extends TileEntity implements IInventory, IPacketHa
 		ISoundServer server = sys.getSoundService();
 		if (server == null || !server.ready())
 			return null;
-		return server.assign(this, filename, new StreamingSoundPosition(new DimensionPos(this)), properties);
+		return server.assign(this, filename, sys.getPosition(this), properties);
 	}
 
 }

@@ -7,6 +7,7 @@ import lc.api.defs.HintProvider;
 import lc.api.init.Biomes;
 import lc.api.init.Blocks;
 import lc.api.init.Dimensions;
+import lc.api.init.Entities;
 import lc.api.init.Interfaces;
 import lc.api.init.Items;
 import lc.api.init.Recipes;
@@ -20,20 +21,20 @@ import lc.common.impl.registry.InterfaceRegistry;
 import lc.common.impl.registry.RecipeRegistry;
 import lc.common.impl.registry.RegistryContainer;
 import lc.common.impl.registry.StructureRegistry;
-import lc.common.network.LCPacketPipeline;
+import lc.common.network.LCNetworkController;
 import lc.common.util.LCCreativeTabManager;
 import lc.common.util.game.LCTickConnector;
-import cpw.mods.fml.common.event.FMLFingerprintViolationEvent;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.event.FMLServerAboutToStartEvent;
-import cpw.mods.fml.common.event.FMLServerStartedEvent;
-import cpw.mods.fml.common.event.FMLServerStartingEvent;
-import cpw.mods.fml.common.event.FMLServerStoppedEvent;
-import cpw.mods.fml.common.event.FMLServerStoppingEvent;
-import cpw.mods.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.common.event.FMLFingerprintViolationEvent;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLInterModComms.IMCEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerAboutToStartEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppedEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
 
 /**
  * LanteaCraft main mod container
@@ -50,6 +51,8 @@ public class LCRuntime implements ILCAPIProxy {
 	private final Blocks blocks = new Blocks();
 	/** The LC items container */
 	private final Items items = new Items();
+	/** The LC entities container */
+	private final Entities entities = new Entities();
 	/** Container of all API registries */
 	private final RegistryContainer registries = new RegistryContainer();
 	/** The LC biomes container */
@@ -68,7 +71,7 @@ public class LCRuntime implements ILCAPIProxy {
 
 	private final ConfigurationController config = new ConfigurationController();
 	/** Network driver */
-	private final LCPacketPipeline network = new LCPacketPipeline();
+	private final LCNetworkController network = new LCNetworkController();
 	/** Tick driver */
 	private final LCTickConnector ticks = new LCTickConnector();
 
@@ -103,6 +106,11 @@ public class LCRuntime implements ILCAPIProxy {
 	}
 
 	@Override
+	public Entities entities() {
+		return entities;
+	}
+
+	@Override
 	public IRegistryContainer registries() {
 		return registries;
 	}
@@ -133,11 +141,11 @@ public class LCRuntime implements ILCAPIProxy {
 	}
 
 	/**
-	 * Get the network pipeline
+	 * Get the network controller
 	 *
-	 * @return The network pipeline
+	 * @return The network controller
 	 */
-	public LCPacketPipeline network() {
+	public LCNetworkController network() {
 		return network;
 	}
 
@@ -191,7 +199,7 @@ public class LCRuntime implements ILCAPIProxy {
 	public void init(FMLInitializationEvent event) {
 		LCLog.debug("LCRuntime entering phase init");
 		container.init(this, event);
-		network.init(BuildInfo.modID);
+		network.init(this, event);
 		((DefinitionRegistry) registries().definitions()).init(this, event);
 		((RecipeRegistry) registries().recipes()).init(this, event);
 		((StructureRegistry) registries().structures()).init(this, event);
@@ -235,7 +243,7 @@ public class LCRuntime implements ILCAPIProxy {
 
 	/**
 	 * Called when a signature problem is detected
-	 * 
+	 *
 	 * @param event
 	 *            The event
 	 */
@@ -245,7 +253,7 @@ public class LCRuntime implements ILCAPIProxy {
 
 	/**
 	 * Called when an IMC is received
-	 * 
+	 *
 	 * @param event
 	 *            The event
 	 */

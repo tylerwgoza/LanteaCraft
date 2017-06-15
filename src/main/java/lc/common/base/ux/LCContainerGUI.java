@@ -15,10 +15,10 @@ import org.lwjgl.opengl.GL11;
 
 import com.google.common.collect.Lists;
 
-import lc.ResourceAccess;
 import lc.api.stargate.StargateType;
 import lc.client.opengl.BufferTexture;
 import lc.common.LCLog;
+import lc.common.resource.ResourceAccess;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -143,6 +143,8 @@ public abstract class LCContainerGUI extends GuiContainer {
 	@Override
 	public void updateScreen() {
 		super.updateScreen();
+		if (activeTab != null)
+			activeTab.update(this);
 		Iterator<Popover> i = popovers.iterator();
 		while (i.hasNext()) {
 			Popover what = i.next();
@@ -202,6 +204,7 @@ public abstract class LCContainerGUI extends GuiContainer {
 		GL11.glDisable(GL11.GL_BLEND);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public void drawTooltip(String what, int x, int y) {
 		List l0 = Lists.newArrayList(what);
 		drawHoveringText(l0, x, y, fontRendererObj);
@@ -219,6 +222,7 @@ public abstract class LCContainerGUI extends GuiContainer {
 
 	@Override
 	protected void keyTyped(char c, int key) {
+		//super.keyTyped(c, key);
 		if (activeTab != null)
 			activeTab.keyTyped(this, c, key);
 		if (key == Keyboard.KEY_ESCAPE)
@@ -227,6 +231,7 @@ public abstract class LCContainerGUI extends GuiContainer {
 
 	@Override
 	protected void mouseClicked(int x, int y, int mouseButton) {
+		super.mouseClicked(x, y, mouseButton);
 		if (mouseButton == 0)
 			mouseDown = true;
 		if (activeTab != null)
@@ -242,6 +247,7 @@ public abstract class LCContainerGUI extends GuiContainer {
 
 	@Override
 	protected void mouseMovedOrUp(int x, int y, int mouseButton) {
+		super.mouseMovedOrUp(x, y, mouseButton);
 		if (activeTab != null)
 			activeTab.mouseMovedOrUp(this, x, y, mouseButton);
 		if (mouseButton == 0 || mouseButton == 1)
@@ -278,7 +284,7 @@ public abstract class LCContainerGUI extends GuiContainer {
 	 * @param address
 	 *            The address string
 	 */
-	public void drawFramedSymbols(int x, int y, StargateType type, String address) {
+	public void drawFramedSymbols(int x, int y, StargateType type, char[] address) {
 		int scale = 2;
 		ResourceLocation tex = null;
 		if (type.getSuffix().length() != 0)

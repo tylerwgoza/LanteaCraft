@@ -1,12 +1,16 @@
 package lc.server;
 
+import lc.LCRuntime;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.event.world.WorldEvent;
-import cpw.mods.fml.common.event.FMLServerAboutToStartEvent;
-import cpw.mods.fml.common.event.FMLServerStartedEvent;
-import cpw.mods.fml.common.event.FMLServerStartingEvent;
-import cpw.mods.fml.common.event.FMLServerStoppedEvent;
-import cpw.mods.fml.common.event.FMLServerStoppingEvent;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.event.FMLServerAboutToStartEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppedEvent;
+import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent;
 
 /**
  * Server-side event hook implementation.
@@ -34,7 +38,7 @@ public class ServerEventHooks {
 
 	public void onServerStopping(FMLServerStoppingEvent event) {
 		serverHints.universeMgr.unloadUniverse(event);
-		serverHints.stargateMgr.closeAllConnections();
+		serverHints.stargateMgr.closeAllConnections(true);
 	}
 
 	@SubscribeEvent
@@ -45,8 +49,7 @@ public class ServerEventHooks {
 	@SubscribeEvent
 	public void onWorldUnload(WorldEvent.Unload event) {
 		serverHints.universeMgr.unloadGalaxy(event);
-		serverHints.stargateMgr
-				.closeConnectionsIn(event.world.provider.dimensionId);
+		serverHints.stargateMgr.closeConnectionsIn(event.world.provider.dimensionId);
 	}
 
 	@SubscribeEvent
@@ -55,7 +58,7 @@ public class ServerEventHooks {
 	}
 
 	public void onServerStopped(FMLServerStoppedEvent event) {
-		// TODO Auto-generated method stub
+		LCRuntime.runtime.network().serverShutdown();
 
 	}
 
@@ -67,6 +70,16 @@ public class ServerEventHooks {
 	public void beforeServerStarted(FMLServerAboutToStartEvent event) {
 		serverHints.trustChain.purge();
 		// TODO: Load the keys from /config/LanteaCraft/trust/ into the chain
+	}
+
+	@SubscribeEvent
+	public void onPlayerConnected(PlayerLoggedInEvent event) {
+		LCRuntime.runtime.network().playerConnected((EntityPlayerMP) event.player);
+	}
+
+	@SubscribeEvent
+	public void onPlayerDisconnected(PlayerLoggedOutEvent event) {
+		LCRuntime.runtime.network().playerDisconnected((EntityPlayerMP) event.player);
 	}
 
 }
